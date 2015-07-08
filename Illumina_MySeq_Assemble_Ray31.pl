@@ -28,7 +28,7 @@ if (not defined $ARGV[2] ) {
 #--------- Run Ray assmbly K=31                                       --------
 #-----------------------------------------------------------------------------
 
-my $system_string = "Ray -k31 -p ".$ResultDirectory."/".$ForwardReads." ".$ResultDirectory."/".$ReverseReads." -o ".$ResultDirectory."/ray_31";
+my $system_string = "Ray -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
 system ($system_string);
 #printf("\n\n\n".$system_string."\n\n\n");
 
