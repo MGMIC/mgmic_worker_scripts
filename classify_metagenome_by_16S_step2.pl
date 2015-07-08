@@ -52,8 +52,6 @@ my $id = 0.7;
 ## Set Display
 ##-----------------------------------------------------------------------------
 system ("Xvfb :1 -screen 0 1024x768x16 &> xvfb.log  &");
-system ("DISPLAY=:1.0");
-system ("export DISPLAY");
 
 #-----------------------------------------------------------------------------
 #   add tags 
@@ -113,9 +111,9 @@ system ($confstring);
 #-----------------------------------------------------------------------------
 
 
-system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L2.txt community_pie_chart_L1.png 1");
-system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L4.txt community_pie_chart_L3.png 3");
-system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L6.txt community_pie_chart_L5.png 5");
+system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L2.txt ".$ResultDirectory."/community_pie_chart_L1.png 1");
+system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L4.txt ".$ResultDirectory."/community_pie_chart_L3.png 3");
+system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L6.txt ".$ResultDirectory."/community_pie_chart_L5.png 5");
 
 
 
