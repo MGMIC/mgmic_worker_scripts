@@ -35,31 +35,31 @@ system ("wget http://mgmic.oscer.ou.edu/sequence_data/tutorials/install_usearch8
 system ("sh install_usearch8.sh");
 system ("cd ".$ResultDirectory);
 
-#-----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 # convert files from fastq to fasta
+### I MOVED THIS PART TO THE QC SCRIPT
 #-----------------------------------------------------------------------------
 
-my $system_string = "read_fastq -i ".$ForwardReads." | write_fasta -o ".$ResultDirectory."/".$FRname.".fasta -x";
-
-printf("\n\n\n".$system_string."\n\n\n");
-system ($system_string);
-
-$system_string = "read_fastq -i ".$ReverseReads." | write_fasta -o ".$ResultDirectory."/".$RRname.".fasta -x";
-
-printf("\n\n\n".$system_string."\n\n\n");
-system ($system_string);
+#my $system_string = "read_fastq -i ".$ForwardReads." | write_fasta -o ".$ResultDirectory."/".$FRname.".fasta -x";
+#system ($system_string);
+#$system_string = "read_fastq -i ".$ReverseReads." | write_fasta -o ".$ResultDirectory."/".$RRname.".fasta -x";
+#system ($system_string);
 
 #-----------------------------------------------------------------------------
 # run usearch
 #-----------------------------------------------------------------------------
 
-$system_string = "usearch8 -usearch_global ".$ResultDirectory."/".$FRname.".fasta -db ".$DatabaseName." -id 0.7 -strand both -mincols 50 -maxhits 1 -qsegout ".$ResultDirectory."/".$DBname.".Fhits.fasta -blast6out ".$ResultDirectory."/".$DBname.".Fhits.tab";
+my $system_string =  "usearch8 -usearch_global ".$ForwardReads." -db ".$DatabaseName." -id 0.7 -strand both -mincols 50 -maxhits 1 -qsegout ".$ResultDirectory."/".$DBname.".Fhits.fasta -blast6out ".$ResultDirectory."/".$DBname.".Fhits.tab";
+
+#$system_string = "usearch8 -usearch_global ".$ResultDirectory."/".$FRname.".fasta -db ".$DatabaseName." -id 0.7 -strand both -mincols 50 -maxhits 1 -qsegout ".$ResultDirectory."/".$DBname.".Fhits.fasta -blast6out ".$ResultDirectory."/".$DBname.".Fhits.tab";
 
 printf("\n\n\n".$system_string."\n\n\n");
 system ($system_string);
 
 
-$system_string = "usearch8 -usearch_global ".$ResultDirectory."/".$RRname.".fasta -db ".$DatabaseName." -id 0.7 -strand both -mincols 50 -maxhits 1 -qsegout ".$ResultDirectory."/".$DBname.".Rhits.fasta -blast6out ".$ResultDirectory."/".$DBname.".Rhits.tab";
+$system_string  = "usearch8 -usearch_global ".$ReverseReads." -db ".$DatabaseName." -id 0.7 -strand both -mincols 50 -maxhits 1 -qsegout ".$ResultDirectory."/".$DBname.".Rhits.fasta -blast6out ".$ResultDirectory."/".$DBname.".Rhits.tab";
+
+#$system_string = "usearch8 -usearch_global ".$ResultDirectory."/".$RRname.".fasta -db ".$DatabaseName." -id 0.7 -strand both -mincols 50 -maxhits 1 -qsegout ".$ResultDirectory."/".$DBname.".Rhits.fasta -blast6out ".$ResultDirectory."/".$DBname.".Rhits.tab";
 
 printf("\n\n\n".$system_string."\n\n\n");
 system ($system_string);
@@ -81,7 +81,8 @@ system ("cat ".$ResultDirectory."/".$DBname.".Fhits.tab ".$ResultDirectory."/".$
 
 #system ("wget http://mgmic.oscer.ou.edu/sequence_data/tutorials/bargraph_redgreen_scale.r");
 
-$system_string = "fgrep -o \"+\" ".$ForwardReads." | wc -l";
+#$system_string = "fgrep -o \"+\" ".$ForwardReads." | wc -l";
+$system_string = "fgrep -o \"\>\" ".$ForwardReads." | wc -l";
 my $number_of_seqs = `$system_string`;
 
 $system_string = "fgrep -o \"\>\" ".$ResultDirectory."/".$DBname.".FRhits.fasta | wc -l";
