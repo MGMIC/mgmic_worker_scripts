@@ -208,6 +208,20 @@ system($confstring);
 $confstring = "cp ".$ResultDirectory."/temp/".$Rfilename.".trimmed.paired.fq.gz.fastq ".$ResultDirectory."/R.QCed.fastq";
 system($confstring);
 
+#-----------------------------------------------------------------------------
+#Convert to fasta
+#-----------------------------------------------------------------------------
+
+$confstring = "read_fastq -i ".$ResultDirectory."/R.QCed.fastq | write_fasta -o ".$ResultDirectory."/R.QCed.fasta -x";
+system ($confstring);
+
+$confstring = "read_fastq -i ".$ResultDirectory."/F.QCed.fastq | write_fasta -o ".$ResultDirectory."/F.QCed.fasta -x";
+system ($confstring);
+
+#------------------------------
+
+
+
 #-------------------
 #clearnup
 #--------------------
