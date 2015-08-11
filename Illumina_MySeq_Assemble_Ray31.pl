@@ -28,12 +28,12 @@ if (not defined $ARGV[2] ) {
 #--------- Run Ray assmbly K=31                                       --------
 #-----------------------------------------------------------------------------
 
-my $system_string = "Ray -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
-system ($system_string);
-#printf("\n\n\n".$system_string."\n\n\n");
+#my $system_string = "Ray -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
 
-# to run this with multiple cores use mpiexec; does not work yet on mgmic; implement later
-# mpiexec -n 6 Ray -k31 -p output_forward_paired.fastq output_reverse_paired.fastq -o ray_31/
+# to run this with multiple cores use mpiexec;
+my $system_string = "mpiexec -n 2 Ray -meta -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
+system ($system_string);
+
 
 $system_string = "cp ".$ResultDirectory."/ray_31/Contigs.fasta ".$ResultDirectory."/Contigs.fasta";
 system ($system_string);
@@ -54,6 +54,13 @@ system ($system_string);
 
 
 $system_string = "cut -f1 -d \" \" ".$ResultDirectory."/temp/temp.orfs.faa > ".$ResultDirectory."/prodigal.orfs.faa";
+system ($system_string);
+
+
+#------------------------------------------------------------------------------
+##--------- Statistics run N50.pl                                      --------
+##-----------------------------------------------------------------------------
+$system_string = "/scripts/bin/N50.pl ".$ResultDirectory."/Contigs.fasta > ".$ResultDirectory."/stats.txt";
 system ($system_string);
 
 #-----------------------------------------------------------------------------
