@@ -4,6 +4,7 @@ use warnings;
 #--INCLUDE PACKAGES-----------------------------------------------------------
 use IO::String;
 use Cwd;
+use File::Basename;
 #use substr;
 #-----------------------------------------------------------------------------
 #----SUBROUTINES--------------------------------------------------------------
@@ -41,13 +42,15 @@ if (not defined $ARGV[2] ) {
   $ResultDirectory = cwd();
 }
 
+chdir($ResultDirectory);
 system ("mkdir ".$ResultDirectory."/temp/");
 
 #-----------------------------------------------------------------------------
 #-join reads------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
-my $join_filename = $ResultDirectory."/temp/".substr($ForwardReads,0,10).".fastq";
+#my $join_filename = $ResultDirectory."/temp/".substr($ForwardReads,0,10).".fastq";
+my $join_filename = $ResultDirectory."/temp/join_file.fastq";
 my $confstring = "fastq-join ".$ForwardReads." ".$ReverseReads." -o ".$join_filename;
 printf "\n\n".$confstring."\n\n";
 system ($confstring);
@@ -56,7 +59,8 @@ system ($confstring);
 #-trim to Q30-----------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
-my $join_filename_q30 = $ResultDirectory."/temp/".substr($ForwardReads,0,10).".q30.fastq";
+#my $join_filename_q30 = $ResultDirectory."/temp/".substr($ForwardReads,0,10).".q30.fastq";
+my $join_filename_q30 = $ResultDirectory."/temp/join_file.q30.fastq";
 $confstring = "read_fastq -e base_33 -i ".$join_filename."join | trim_seq -m 30 | write_fastq -o ".$join_filename_q30." -x\n";
 printf $confstring."\n\n";
 system ($confstring);
@@ -225,14 +229,14 @@ WriteArrayToFile($ResultDirectory."/temp/"."rtemp.fasta",@rtemp);
 #-----------------------------------------------------------------------------
 #-create final output file -------------------------------------------
 #-----------------------------------------------------------------------------
-
-system ("cat ".$ResultDirectory."/temp/ftemp.fasta ".$ResultDirectory."/temp/rtemp.fasta > ".$ResultDirectory."/".substr($ForwardReads,0,10).".q30.FR.fasta");
-
+my ($filename, $dirs, $suffix) = fileparse($ForwardReads);
+#system ("cat ".$ResultDirectory."/temp/ftemp.fasta ".$ResultDirectory."/temp/rtemp.fasta > ".$ResultDirectory."/".substr($ForwardReads,0,10).".q30.FR.fasta");
+system ("cat ".$ResultDirectory."/temp/ftemp.fasta ".$ResultDirectory."/temp/rtemp.fasta > ".$ResultDirectory."/".$filename.".q30.FR.fasta");
 #-----------------------------------------------------------------------------
 #-cleanup -------------------------------------------
 #-----------------------------------------------------------------------------
 
-system ("rm -rf temp/");
+#system ("rm -rf temp/");
 
 
 
