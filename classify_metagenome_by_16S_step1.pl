@@ -1,14 +1,14 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-#--INCLUDE PACKAGES-----------------------------------------------------------$
+#--INCLUDE PACKAGES-----------------------------------------------------------
 use IO::String;
 use File::Basename;
 use File::Copy;
 use Cwd;
-#-----------------------------------------------------------------------------$
-#----SUBROUTINES--------------------------------------------------------------$
-#-----------------------------------------------------------------------------$
+#-----------------------------------------------------------------------------
+#----SUBROUTINES--------------------------------------------------------------
+#-----------------------------------------------------------------------------
 sub get_file_data
 {
   my ($file_name) = @_;
@@ -39,12 +39,29 @@ close (OUTFILE);
 
 my $ForwardReads = $ARGV[0];
 my $ReverseReads = $ARGV[1];
-my $database_path = $ARGV[2];
+#my $database_path = $ARGV[2];
+#my $database_path = "/data/DATABASES/16S/SSURef_108_97_candidate_db.udb";
+my $database_path = "/data/DATABASES/16S/90_Silva_111_rep_set.udb";
 my $ResultDirectory = $ARGV[3];
 if (not defined $ARGV[3] ) {
   $ResultDirectory = cwd();
 }
+my $on_off_switch = $ARGV[4];
+if (not defined $ARGV[4] ) {
+#    $on_off_switch = "on";
+    $on_off_switch = "off";
+}
+
+
 my $id = 0.7;
+
+#-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+
+if ($on_off_switch eq "on")
+{
+
 
 #-----------------------------------------------------------------------------
 #--INSTALL SILVA 111 AND USEARCH
@@ -122,7 +139,14 @@ printf($confstring."\n\n");
 system ($confstring);
 
 
+#-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+} 
+#end of on switch braket
 
+if ($on_off_switch eq "off")
+{}
 
 
 

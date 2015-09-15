@@ -46,7 +46,20 @@ if (not defined $ARGV[2] ) {
   $ResultDirectory = cwd();
 }
 
+my $on_off_switch = $ARGV[3];
+if (not defined $ARGV[3] ) {
+  #  $on_off_switch = "on";
+    $on_off_switch = "off";
+}
+
 my $id = 0.7;
+
+#-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+
+if ($on_off_switch eq "on")
+{
 
 #-----------------------------------------------------------------------------
 ## Set Display
@@ -114,6 +127,20 @@ system ($confstring);
 system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L2.txt ".$ResultDirectory."/community_pie_chart_L1.png 1");
 system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L4.txt ".$ResultDirectory."/community_pie_chart_L3.png 3");
 system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L6.txt ".$ResultDirectory."/community_pie_chart_L5.png 5");
+
+
+
+#-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+} 
+#end of on switch braket
+
+if ($on_off_switch eq "off")
+{}
+
+
+
 
 
 
