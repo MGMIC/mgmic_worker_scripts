@@ -43,7 +43,16 @@ my $ResultDirectory = $ARGV[2];
 if (not defined $ARGV[2] ) {
     $ResultDirectory = cwd();
 }
+my $on_off_switch = $ARGV[3];
+if (not defined $ARGV[3] ) {
+#    $on_off_switch = "on";
+    $on_off_switch = "off";
+}
+
+
 my @adapter_array;
+my $system_string;
+
 
 #-----------------------------------------------------------------------------
 # test if reads zipped; if yes, unzip
@@ -77,6 +86,37 @@ system("fastqc ".$ForwardReads." -o ".$ResultDirectory);  #not putting them into
 system("fastqc ".$ReverseReads." -o ".$ResultDirectory);
 
 #-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+
+if ($on_off_switch eq "on")
+{
+
+#-----------------------------------------------------------------------------
+# remove nextera transposons with trim_galore
+#-----------------------------------------------------------------------------
+
+$system_string = "trim_galore --phred33 --paired -q 30 --nextera -o ".$ResultDirectory."/ ".$ForwardReads." ".$ReverseReads;
+system($system_string);
+my $f_b = $ForwardReads; $f_b =~ s/.fastq//;
+my $r_b = $ReverseReads; $r_b =~ s/.fastq//;
+
+$system_string = ("mv ".$ForwardReads." ".$f_b.".old");
+system ($system_string);
+printf $system_string."\n\n";
+
+$system_string =  ("mv ".$ReverseReads." ".$r_b.".old");
+system ($system_string);
+printf $system_string."\n\n";
+
+$system_string = ("mv ".$f_b."_val_1.fq ".$f_b.".fastq");
+system ($system_string);
+printf $system_string."\n\n";
+
+$system_string = ("mv ".$r_b."_val_2.fq ".$r_b.".fastq");
+system ($system_string);
+printf $system_string."\n\n";
+
 #-------------get forward adapters--------------------------------------------
 #-----------------------------------------------------------------------------
 
@@ -143,9 +183,13 @@ foreach my $s (@Ranalysis)
      }
   }
 
+push (@adapter_array, "-b GATCGGAAGAGCACACGTCTGAACTCCAGTCAC");
+#push (@adapter_array, "-b AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT");
+push (@adapter_array, "-b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT");
+#push (@adapter_array, "-b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT");
 push (@adapter_array, "-e 0.15");
 push (@adapter_array, "-q 30");
-push (@adapter_array, "-n 3");
+push (@adapter_array, "-n 2");
 
 
 #-----------------------------------------------------------------------------
@@ -218,18 +262,48 @@ system ($confstring);
 $confstring = "read_fastq -i ".$ResultDirectory."/F.QCed.fastq | write_fasta -o ".$ResultDirectory."/F.QCed.fasta -x";
 system ($confstring);
 
-#------------------------------
+#-----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
-
-
-#-------------------
+#-----------------------------------------------------------------------------
 #clearnup
-#--------------------
+#-----------------------------------------------------------------------------
 
 system ("rm -rf ".$ResultDirectory."/temp/");
 #system ("rm  ".$ResultDirectory."/*.unpaired.fq.gz");
 #system ("rm .$ResultDirectory."*.zip");
 
+system ("rm ".$ForwardReads);
+system ("rm ".$ReverseReads);
+
+system ("rm ".$f_b.".old");
+system ("rm ".$r_b.".old");
+
+#-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+} 
+#end of on switch braket
+
+if ($on_off_switch eq "off")
+{
+
+if ($ForwardReads ne $ResultDirectory."/F.QCed.fastq")
+{
+  $system_string = ("mv ".$ForwardReads." ".$ResultDirectory."/F.QCed.fastq");
+  system ($system_string);
+}
+if ($ReverseReads ne $ResultDirectory."/R.QCed.fastq")
+{
+  $system_string =  ("mv ".$ReverseReads." ".$ResultDirectory."/R.QCed.fastq");
+  system ($system_string);
+}
+
+$system_string = "read_fastq -i ".$ResultDirectory."/R.QCed.fastq | write_fasta -o ".$ResultDirectory."/R.QCed.fasta -x";
+system ($system_string);
+
+$system_string = "read_fastq -i ".$ResultDirectory."/F.QCed.fastq | write_fasta -o ".$ResultDirectory."/F.QCed.fasta -x";
+system ($system_string);
 
 
-
+}
