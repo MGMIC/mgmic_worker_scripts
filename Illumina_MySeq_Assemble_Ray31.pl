@@ -1,14 +1,14 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-#--INCLUDE PACKAGES-----------------------------------------------------------$
+#--INCLUDE PACKAGES-----------------------------------------------------------
 use IO::String;
 use File::Basename;
 use File::Copy;
 use Cwd;
-#-----------------------------------------------------------------------------$
-#----SUBROUTINES--------------------------------------------------------------$
-#-----------------------------------------------------------------------------$
+#-----------------------------------------------------------------------------
+#----SUBROUTINES--------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
 # don't need any
 
@@ -22,17 +22,30 @@ my $ResultDirectory = $ARGV[2];
 if (not defined $ARGV[2] ) {
   $ResultDirectory = cwd();
 }
+my $on_off_switch = $ARGV[3];
+if (not defined $ARGV[3] ) {
+#    $on_off_switch = "on";
+    $on_off_switch = "off";
+}
 
+my $system_string;
+
+#-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+
+if ($on_off_switch eq "on")
+{
 
 #-----------------------------------------------------------------------------
 #--------- Run Ray assmbly K=31                                       --------
 #-----------------------------------------------------------------------------
 
-#my $system_string = "Ray -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
+$system_string = "Ray -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
 
 # to run this with multiple cores use mpiexec;
-my $system_string = "mpiexec -n 2 Ray -meta -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
-system ($system_string);
+my $system_string = "mpiexec -n 4 Ray -meta -k31 -p ".$ForwardReads." ".$ReverseReads." -o ".$ResultDirectory."/ray_31";
+#system ($system_string);
 
 
 $system_string = "cp ".$ResultDirectory."/ray_31/Contigs.fasta ".$ResultDirectory."/Contigs.fasta";
@@ -70,4 +83,14 @@ system ($system_string);
 system ("rm -rf ".$ResultDirectory."/ray_31");
 system ("rm -rf ".$ResultDirectory."/temp");
 system ("rm -rf ".$ResultDirectory."/RayOutput");
+
+
+#-----------------------------------------------------------------------------
+# on/off switch
+#-----------------------------------------------------------------------------
+} 
+#end of on/off switch braket
+
+if ($on_off_switch eq "off")
+{}
 
