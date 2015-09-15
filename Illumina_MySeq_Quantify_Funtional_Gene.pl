@@ -10,7 +10,18 @@ use Cwd;
 #----SUBROUTINES--------------------------------------------------------------$
 #-----------------------------------------------------------------------------$
 
-# don't need any
+sub WriteArrayToFile
+{
+  my ($filename, @in) = @_;
+  my $a = join (@in, "\n");
+  open (OUTFILE, ">$filename");
+  foreach my $a (@in)
+{
+    print OUTFILE $a;
+    print OUTFILE "\n";
+  }
+close (OUTFILE);
+}
 
 #-----------------------------------------------------------------------------
 # input parameters
@@ -93,6 +104,14 @@ if ($a == 0) {$a=0.1;}
 #1 in 1000 =100% so 100 in 100000  = 100%
 $system_string ="Rscript /opt/local/scripts/bargraph_redgreen_scale.r ".$a." ".$ResultDirectory."/".$DBname.".bargraph.png";
 system ($system_string);
+
+my @stats;
+
+push (@stats, "Number of read pairs analyzed: ".$number_of_seqs);
+push (@stats, "Number of hits observed: ".$number_of_hits);
+
+
+WriteArrayToFile($ResultDirectory."/".$DBname.".stats.txt", @stats);
 
 
 #-----------------------------------------------------------------------------
