@@ -48,10 +48,13 @@ if (not defined $ARGV[2] ) {
 
 my $on_off_switch = $ARGV[3];
 if (not defined $ARGV[3] ) {
-  #  $on_off_switch = "on";
-    $on_off_switch = "off";
+    $on_off_switch = "on";
+#     $on_off_switch = "off";
 }
 
+my $runtime_flags = $ARGV[4];
+
+my $min_seq_length = 100; #default 150
 my $id = 0.7;
 
 #-----------------------------------------------------------------------------
@@ -62,8 +65,8 @@ if ($on_off_switch eq "on")
 {
 
 #-----------------------------------------------------------------------------
-## Set Display
-##-----------------------------------------------------------------------------
+# Set Display
+#-----------------------------------------------------------------------------
 system ("Xvfb :1 -screen 0 1024x768x16 &> xvfb.log  &");
 
 #-----------------------------------------------------------------------------
@@ -95,7 +98,7 @@ system ("validate_mapping_file.py -m ".$ResultDirectory."/ssu_hits_corrected.map
 #Split libraries
 #-----------------------------------------------------------------------------
 
-$confstring = "split_libraries.py -f ".$ResultDirectory."/ssu_hits_corrected".$barcode.".fasta -m ".$ResultDirectory."/ssu_hits_corrected.map -o ".$ResultDirectory."/temp/mg_processed_seqs/ --barcode_type 12";
+$confstring = "split_libraries.py -f ".$ResultDirectory."/ssu_hits_corrected".$barcode.".fasta -m ".$ResultDirectory."/ssu_hits_corrected.map -o ".$ResultDirectory."/temp/mg_processed_seqs/ --barcode_type 12 -l ".$min_seq_length;
 
 printf("\n\n\n\n".$confstring."\n\n");
 system ($confstring);
@@ -127,6 +130,17 @@ system ($confstring);
 system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L2.txt ".$ResultDirectory."/community_pie_chart_L1.png 1");
 system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L4.txt ".$ResultDirectory."/community_pie_chart_L3.png 3");
 system ("Rscript /opt/local/scripts/bin/pie_chart.r ".$ResultDirectory."/temp/mg_taxplots/otu_table_L6.txt ".$ResultDirectory."/community_pie_chart_L5.png 5");
+
+
+#-----------------------------------------------------------------------------
+# Make a KronaGraph
+#-----------------------------------------------------------------------------
+
+$confstring = "perl /opt/local/scripts/bin/convert_qiime_tax_to_krona.pl ".$ResultDirectory."/temp/mg_taxplots/otu_table_L6.txt ".$ResultDirectory."/L6_kt.txt";
+system ($confstring);
+
+$confstring = "ktImportText ".$ResultDirectory."/L6_kt.txt  -o ".$ResultDirectory."/Krona_outsd.html";
+system ($confstring);
 
 
 
