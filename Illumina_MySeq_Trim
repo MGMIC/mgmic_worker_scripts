@@ -1,14 +1,15 @@
 #!/usr/bin/env perl
 use strict;
 use warnings;
-#--INCLUDE PACKAGES-----------------------------------------------------------$
+#--INCLUDE PACKAGES-----------------------------------------------------------
 use IO::String;
 use File::Basename;
 use File::Copy;
 use Cwd;
-#-----------------------------------------------------------------------------$
-#----SUBROUTINES--------------------------------------------------------------$
-#-----------------------------------------------------------------------------$
+#-----------------------------------------------------------------------------
+#----SUBROUTINES--------------------------------------------------------------
+#-----------------------------------------------------------------------------
+
 sub get_file_data
     {
     my ($file_name) = @_;
@@ -17,7 +18,7 @@ sub get_file_data
     @file_content = <PROTEINFILE>;
     close PROTEINFILE;
     return @file_content;
-    } # end of subroutine get_file_data;
+    } 
 
 
     sub WriteArrayToFile
@@ -33,9 +34,29 @@ sub get_file_data
     close (OUTFILE);
      }
 
+sub parse_flags
+{
+  my ($flags) = @_;
+
+  my @elements = split("-", $flags);
+  my @r1; my @r2;
+  foreach my $a (@elements)
+      {
+      $a=~ s/\s+$//;
+      if ($a ne '')
+         {
+          my @tr = split (/ /, $a);
+          if ($tr[0] && $tr[1]) { push (@r1, $tr[0]); push (@r2, $tr[1]);}
+         }
+      }
+return (\@r1, \@r2);
+} # end of parse_flags subroutine;
+
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
+my @adapter_array;
+my $system_string;
 
 my $ForwardReads = $ARGV[0];
 my $ReverseReads = $ARGV[1];
@@ -45,14 +66,45 @@ if (not defined $ARGV[2] ) {
 }
 my $on_off_switch = $ARGV[3];
 if (not defined $ARGV[3] ) {
-#    $on_off_switch = "on";
-    $on_off_switch = "off";
+    $on_off_switch = "on";
+#    $on_off_switch = "off";
 }
+my $runtime_flags = $ARGV[4];
+
+#-----------------------------------------------------------------------------
+# DEFAULT RUNTIME PARAMETERS
+# we assume that data are MiSeq PE250 as default parameters
+#-----------------------------------------------------------------------------
 
 
-my @adapter_array;
-my $system_string;
+my $forward_read_length = 250; #default: 250 
+my $reverse_read_length = 250; #default: 250
 
+
+#-----------------------------------------------------------------------------
+# RUNTIME FLAG MANAGEMENT
+#
+# -f_read_trim nt     trim 3'-end of forward reads so they are maximally nt nucleotides in length      
+# -r_read_trim nt     trim 3'-end of reverse reads so they are maximally nt nucleotides in length   
+# -transcriptome nt   indicate the data are RNAseq data with a read length of nt
+# -nextera 0/1        to indicate if nextera transposons are present 1=yes 0=no
+#
+#-----------------------------------------------------------------------------
+
+my $is_transcriptome =0; 
+my $contains_nextera =0;
+
+my @rf1 = @{(parse_flags($runtime_flags))[0]};
+my @rf2 = @{(parse_flags($runtime_flags))[1]};
+
+for (my $rf_count = 0; $rf_count <=scalar(@rf1); $rf_count++)
+    {
+    if ($rf1[$rf_count] eq "f_read_trim")  { $forward_read_length = $rf2[$rf_count]; }           
+    if ($rf1[$rf_count] eq "r_read_trim")  { $reverse_read_length = $rf2[$rf_count]; }           
+    if ($rf1[$rf_count] eq "nextera")  { $contains_nextera = 1; }           
+    if ($rf1[$rf_count] eq "transcriptome")  { $forward_read_length = $rf2[$rf_count]; $reverse_read_length = $rf2[$rf_count]; $contains_nextera = 0; $is_transcriptome =1 }           
+
+}
 
 #-----------------------------------------------------------------------------
 # test if reads zipped; if yes, unzip
@@ -96,35 +148,44 @@ if ($on_off_switch eq "on")
 # remove nextera transposons with trim_galore
 #-----------------------------------------------------------------------------
 
-$system_string = "trim_galore --phred33 --paired -q 30 --nextera -o ".$ResultDirectory."/ ".$ForwardReads." ".$ReverseReads;
-system($system_string);
 my $f_b = $ForwardReads; $f_b =~ s/.fastq//;
 my $r_b = $ReverseReads; $r_b =~ s/.fastq//;
 
-$system_string = ("mv ".$ForwardReads." ".$f_b.".old");
-system ($system_string);
-printf $system_string."\n\n";
+if ($contains_nextera == 1)
 
-$system_string =  ("mv ".$ReverseReads." ".$r_b.".old");
-system ($system_string);
-printf $system_string."\n\n";
+{
 
-$system_string = ("mv ".$f_b."_val_1.fq ".$f_b.".fastq");
-system ($system_string);
-printf $system_string."\n\n";
+   $system_string = "trim_galore --phred33 --paired -q 30 --nextera -o ".$ResultDirectory."/ ".$ForwardReads." ".$ReverseReads;
+   system($system_string);
+#   my $f_b = $ForwardReads; $f_b =~ s/.fastq//;
+#   my $r_b = $ReverseReads; $r_b =~ s/.fastq//;
 
-$system_string = ("mv ".$r_b."_val_2.fq ".$r_b.".fastq");
-system ($system_string);
-printf $system_string."\n\n";
+   $system_string = ("mv ".$ForwardReads." ".$f_b.".old");
+   system ($system_string);
+   printf $system_string."\n\n";
 
+   $system_string =  ("mv ".$ReverseReads." ".$r_b.".old");
+   system ($system_string);
+   printf $system_string."\n\n";
+
+   $system_string = ("mv ".$f_b."_val_1.fq ".$f_b.".fastq");
+   system ($system_string);
+   printf $system_string."\n\n";
+
+   $system_string = ("mv ".$r_b."_val_2.fq ".$r_b.".fastq");
+   system ($system_string);
+   printf $system_string."\n\n";
+
+}
 #-------------get forward adapters--------------------------------------------
 #-----------------------------------------------------------------------------
 
 my $f = $ForwardReads."c"; $f =~ tr/.fastqc/_fastqc/;
 my ($filename, $dirs, $suffix) = fileparse($f);
  
-printf "\n\n";
-system("unzip ".$ResultDirectory."/temp/".$filename.".zip -d ".$ResultDirectory."/temp/");
+#system("unzip ".$ResultDirectory."/temp/".$filename.".zip -d ".$ResultDirectory."/temp/");
+
+system("unzip ".$ResultDirectory."/".$filename.".zip -d ".$ResultDirectory."/temp/");
 my @Fanalysis = get_file_data ($ResultDirectory."/temp/".$filename."/fastqc_data.txt");
 ($filename, $dirs, $suffix) = fileparse($ForwardReads);
 my $Ffilename = $filename;
@@ -156,8 +217,10 @@ foreach my $s (@Fanalysis)
 
 $f = $ReverseReads."c"; $f =~ tr/.fastqc/_fastqc/;
 ($filename, $dirs, $suffix) = fileparse($f);
-printf "\n\n";
-system("unzip ".$ResultDirectory."/temp/".$filename.".zip -d ".$ResultDirectory."/temp/");
+
+#system("unzip ".$ResultDirectory."/temp/".$filename.".zip -d ".$ResultDirectory."/temp/");
+
+system("unzip ".$ResultDirectory."/".$filename.".zip -d ".$ResultDirectory."/temp/");
 my @Ranalysis = get_file_data ($ResultDirectory."/temp/".$filename."/fastqc_data.txt");
 ($filename, $dirs, $suffix) = fileparse($ReverseReads);
 my $Rfilename = $filename;
@@ -187,6 +250,7 @@ push (@adapter_array, "-b GATCGGAAGAGCACACGTCTGAACTCCAGTCAC");
 #push (@adapter_array, "-b AATGATACGGCGACCACCGAGATCTACACTCTTTCCCTACACGACGCTCTTCCGATCT");
 push (@adapter_array, "-b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT");
 #push (@adapter_array, "-b AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGTAGATCTCGGTGGTCGCCGTATCATT");
+push (@adapter_array, "-b NNNNNNN");
 push (@adapter_array, "-e 0.15");
 push (@adapter_array, "-q 30");
 push (@adapter_array, "-n 2");
@@ -214,25 +278,39 @@ system ("cutadapt ".$confstring.$ReverseReads." > ".$ResultDirectory."/temp/".$R
 #-trim to Q30-----------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
+if ($is_transcriptome == 0)
+{
+$confstring = "read_fastq -e base_33 -i ".$ResultDirectory."/temp/".$Ffilename.".cutadapt | trim_seq -m 30 -l 10 --trim=right | write_fastq -o ".$ResultDirectory."/temp/".$Ffilename.".cutadapt.q30 -x\n";
+system ($confstring);
+$confstring = "read_fastq -e base_33 -i ".$ResultDirectory."/temp/".$Rfilename.".cutadapt | trim_seq -m 30 -l 10 --trim=right | write_fastq -o ".$ResultDirectory."/temp/".$Rfilename.".cutadapt.q30 -x\n";
+system ($confstring);
+}
+
+if ($is_transcriptome == 1)
+{
 $confstring = "read_fastq -e base_33 -i ".$ResultDirectory."/temp/".$Ffilename.".cutadapt | trim_seq -m 30 | write_fastq -o ".$ResultDirectory."/temp/".$Ffilename.".cutadapt.q30 -x\n";
 system ($confstring);
 $confstring = "read_fastq -e base_33 -i ".$ResultDirectory."/temp/".$Rfilename.".cutadapt | trim_seq -m 30 | write_fastq -o ".$ResultDirectory."/temp/".$Rfilename.".cutadapt.q30 -x\n";
 system ($confstring);
+}
 
 #-----------------------------------------------------------------------------
-#- remove poly-A----------
+#- remove poly-A and crop to defined length----------
 #-----------------------------------------------------------------------------
 chdir($ResultDirectory."/temp/");
-$confstring = "homerTools trim -3 AAAAAA ".$ResultDirectory."/temp/".$Ffilename.".cutadapt.q30";
+$confstring = "homerTools trim -3 AAAAAAAA -len ".$forward_read_length." ".$ResultDirectory."/temp/".$Ffilename.".cutadapt.q30\n";
 system($confstring);
-$confstring = "homerTools trim -3 AAAAAA ".$ResultDirectory."/temp/".$Rfilename.".cutadapt.q30";
+$confstring = "homerTools trim -3 AAAAAAAA -len ".$reverse_read_length." ".$ResultDirectory."/temp/".$Rfilename.".cutadapt.q30\n";
 system($confstring);
 
 #-----------------------------------------------------------------------------
-#-MINLEN: 50; paired only; MAXLEN (CROP):250----------------------------------
+#-MINLEN: 50; paired only----------------------------------
 #-----------------------------------------------------------------------------
 
-$confstring = "trimmomatic PE -phred33 ".$ResultDirectory."/temp/".$Ffilename.".cutadapt.q30.trimmed ".$ResultDirectory."/temp/".$Rfilename.".cutadapt.q30.trimmed ".$Ffilename.".trimmed.paired.fq.gz.fastq ".$Ffilename.".trimmed.unpaired.fq.gz ".$Rfilename.".trimmed.paired.fq.gz.fastq ".$Rfilename.".trimmed.unpaired.fq.gz MINLEN:50 CROP:250";
+#$confstring = "trimmomatic PE -phred33 ".$ResultDirectory."/temp/".$Ffilename.".cutadapt.q30.trimmed ".$ResultDirectory."/temp/".$Rfilename.".cutadapt.q30.trimmed ".$Ffilename.".trimmed.paired.fq.gz.fastq ".$Ffilename.".trimmed.unpaired.fq.gz ".$Rfilename.".trimmed.paired.fq.gz.fastq ".$Rfilename.".trimmed.unpaired.fq.gz MINLEN:50\n";
+
+$confstring = "trimmomatic PE -phred33 ".$ResultDirectory."/temp/".$Ffilename.".cutadapt.q30.trimmed ".$ResultDirectory."/temp/".$Rfilename.".cutadapt.q30.trimmed ".$Ffilename.".trimmed.paired.fq.gz.fastq ".$Ffilename.".trimmed.unpaired.fq.gz ".$Rfilename.".trimmed.paired.fq.gz.fastq ".$Rfilename.".trimmed.unpaired.fq.gz MINLEN:50\n";
+
 printf "\n\n".$confstring."\n\n";
 system($confstring);
 
@@ -243,24 +321,25 @@ system("fastqc ".$ResultDirectory."/temp/".$Ffilename.".trimmed.paired.fq.gz.fas
 system("fastqc ".$ResultDirectory."/temp/".$Rfilename.".trimmed.paired.fq.gz.fastq -o ".$ResultDirectory);
 
 #$confstring = "cp ".$ResultDirectory."/temp/".$Ffilename.".trimmed.paired.fq.gz.fastq ".$ResultDirectory."/".$Ffilename.".QCed.fastq";
+#$confstring = "cp ".$ResultDirectory."/temp/".$Rfilename.".trimmed.paired.fq.gz.fastq ".$ResultDirectory."/".$Rfilename.".QCed.fastq";
 
 $confstring = "cp ".$ResultDirectory."/temp/".$Ffilename.".trimmed.paired.fq.gz.fastq ".$ResultDirectory."/F.QCed.fastq";
 system($confstring);
-
-#$confstring = "cp ".$ResultDirectory."/temp/".$Rfilename.".trimmed.paired.fq.gz.fastq ".$ResultDirectory."/".$Rfilename.".QCed.fastq";
-
 $confstring = "cp ".$ResultDirectory."/temp/".$Rfilename.".trimmed.paired.fq.gz.fastq ".$ResultDirectory."/R.QCed.fastq";
 system($confstring);
+
 
 #-----------------------------------------------------------------------------
 #Convert to fasta
 #-----------------------------------------------------------------------------
 
-$confstring = "read_fastq -i ".$ResultDirectory."/R.QCed.fastq | write_fasta -o ".$ResultDirectory."/R.QCed.fasta -x";
+if ($is_transcriptome == 0)
+{
+$confstring = "read_fastq -i ".$ResultDirectory."/F.QCed.fastq -e base_33 | write_fasta -o ".$ResultDirectory."/F.QCed.fasta -x";
 system ($confstring);
-
-$confstring = "read_fastq -i ".$ResultDirectory."/F.QCed.fastq | write_fasta -o ".$ResultDirectory."/F.QCed.fasta -x";
+$confstring = "read_fastq -i ".$ResultDirectory."/R.QCed.fastq -e base_33 | write_fasta -o ".$ResultDirectory."/R.QCed.fasta -x";
 system ($confstring);
+}
 
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
@@ -270,14 +349,15 @@ system ($confstring);
 #-----------------------------------------------------------------------------
 
 system ("rm -rf ".$ResultDirectory."/temp/");
-#system ("rm  ".$ResultDirectory."/*.unpaired.fq.gz");
-#system ("rm .$ResultDirectory."*.zip");
+system ("rm ".$ResultDirectory."/*.unpaired.fq.gz");
+system ("rm ".$ResultDirectory."/*.zip");
 
-system ("rm ".$ForwardReads);
-system ("rm ".$ReverseReads);
+#system ("rm ".$ForwardReads);
+#system ("rm ".$ReverseReads);
 
 system ("rm ".$f_b.".old");
 system ("rm ".$r_b.".old");
+
 
 #-----------------------------------------------------------------------------
 # on/off switch
@@ -299,11 +379,23 @@ if ($ReverseReads ne $ResultDirectory."/R.QCed.fastq")
   system ($system_string);
 }
 
-$system_string = "read_fastq -i ".$ResultDirectory."/R.QCed.fastq | write_fasta -o ".$ResultDirectory."/R.QCed.fasta -x";
+$system_string = "read_fastq -i ".$ResultDirectory."/R.QCed.fastq -e base_33 | write_fasta -o ".$ResultDirectory."/R.QCed.fasta -x";
 system ($system_string);
 
-$system_string = "read_fastq -i ".$ResultDirectory."/F.QCed.fastq | write_fasta -o ".$ResultDirectory."/F.QCed.fasta -x";
-system ($system_string);
 
+$system_string = "read_fastq -i ".$ResultDirectory."/F.QCed.fastq -e base_33 | write_fasta -o ".$ResultDirectory."/F.QCed.fasta -x";
+system ($system_string);
 
 }
+
+
+#-----------------------------------------------------------------------------
+# gzip files if transcriptome
+#-----------------------------------------------------------------------------
+
+
+if ($is_transcriptome == 1)
+{
+system ("gzip ".$ResultDirectory."/*.fastq")
+}
+
