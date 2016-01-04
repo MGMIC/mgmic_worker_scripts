@@ -42,43 +42,53 @@ if (not defined $ARGV[2] ) {
   $ResultDirectory = cwd();
 }
 
+my $runtime_flags = $ARGV[3];
+
+
 chdir($ResultDirectory);
 system ("mkdir ".$ResultDirectory."/temp/");
-
-#-----------------------------------------------------------------------------
-#-join reads------------------------------------------------------------------
-#-----------------------------------------------------------------------------
-
-#my $join_filename = $ResultDirectory."/temp/".substr($ForwardReads,0,10).".fastq";
-my $join_filename = $ResultDirectory."/temp/join_file.fastq";
-my $confstring = "fastq-join ".$ForwardReads." ".$ReverseReads." -o ".$join_filename;
-printf "\n\n".$confstring."\n\n";
-system ($confstring);
 
 #-----------------------------------------------------------------------------
 #-trim to Q30-----------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
-#my $join_filename_q30 = $ResultDirectory."/temp/".substr($ForwardReads,0,10).".q30.fastq";
-my $join_filename_q30 = $ResultDirectory."/temp/join_file.q30.fastq";
-$confstring = "read_fastq -e base_33 -i ".$join_filename."join | trim_seq -m 30 | write_fastq -o ".$join_filename_q30." -x\n";
+my $confstring;
+
+$confstring = "read_fastq -e base_33 -i ".$ForwardReads." | trim_seq -m 30 -l 10 | write_fastq -o ".$ResultDirectory."/temp/F.q30.fastq -x\n";
+printf $confstring."\n\n";
+system ($confstring);
+
+$confstring = "read_fastq -e base_33 -i ".$ReverseReads." | trim_seq -m 30 -l 10 | write_fastq -o ".$ResultDirectory."/temp/R.q30.fastq -x\n";
 printf $confstring."\n\n";
 system ($confstring);
 
 
+#-----------------------------------------------------------------------------
+#-join reads------------------------------------------------------------------
+#-----------------------------------------------------------------------------
 
-$confstring = ("cp ".$join_filename_q30." ".$ResultDirectory."/joinedQ30_for_qiime.fastq");
-printf $confstring."\n\n";
+my $join_filename = $ResultDirectory."/temp/join_file.fastq";
+$confstring = "fastq-join ".$ResultDirectory."/temp/F.q30.fastq ".$ResultDirectory."/temp/R.q30.fastq -o ".$join_filename;
+printf "\n\n".$confstring."\n\n";
 system ($confstring);
 
+
+#-----------------------------------------------------------------------------
+#-move joined file to right plcae --------------------------------------------
+#-----------------------------------------------------------------------------
+
+
+$confstring = ("cp ".$join_filename."join ".$ResultDirectory."/joinedQ30_for_qiime.fastq");
+printf $confstring."\n\n";
+system ($confstring);
 
 #-----------------------------------------------------------------------------
 #-converto fasta-----------------------------------------------------------------
 #-----------------------------------------------------------------------------
-my $join_filename_q30_fasta =$join_filename_q30; 
+my $join_filename_q30_fasta =$ResultDirectory."/joinedQ30_for_qiime.fastq"; 
 chop ($join_filename_q30_fasta);
 $join_filename_q30_fasta = $join_filename_q30_fasta."a";
-$confstring = "read_fastq -e base_33 -i ".$join_filename_q30." | write_fasta -o ".$join_filename_q30_fasta." -x";
+$confstring = "read_fastq -e base_33 -i ".$ResultDirectory."/joinedQ30_for_qiime.fastq | write_fasta -o ".$join_filename_q30_fasta." -x";
 printf $confstring."\n\n";
 system ($confstring);
 
@@ -170,7 +180,7 @@ WriteArrayToFile($ResultDirectory."/temp/"."ttemp.fasta",@ttemp);
 my $seqs_barcode_r_direction =0;
 $barcode_not_found =0;
 
-my $join_filename_q30_fasta_r = $join_filename_q30.".r.fasta";
+my $join_filename_q30_fasta_r = $join_filename.".r.fasta";
 $confstring = "fastx_reverse_complement -i ".$ResultDirectory."/temp/ttemp.fasta -o ".$join_filename_q30_fasta_r;
 printf $confstring."\n\n";
 system ($confstring);
@@ -232,6 +242,17 @@ WriteArrayToFile($ResultDirectory."/temp/"."rtemp.fasta",@rtemp);
 my ($filename, $dirs, $suffix) = fileparse($ForwardReads);
 #system ("cat ".$ResultDirectory."/temp/ftemp.fasta ".$ResultDirectory."/temp/rtemp.fasta > ".$ResultDirectory."/".substr($ForwardReads,0,10).".q30.FR.fasta");
 system ("cat ".$ResultDirectory."/temp/ftemp.fasta ".$ResultDirectory."/temp/rtemp.fasta > ".$ResultDirectory."/".$filename.".q30.FR.fasta");
+
+
+#-----------------------------------------------------------------------------
+#-run fastqc report
+#-----------------------------------------------------------------------------
+
+system("mkdir -p ".$ResultDirectory."/fastqc_reports");
+system("fastqc ".$ForwardReads." -o ".$ResultDirectory."/fastqc_reports");
+system("fastqc ".$ReverseReads." -o ".$ResultDirectory."/fastqc_reports");
+system("fastqc ".$ResultDirectory."/joinedQ30_for_qiime.fastq -o ".$ResultDirectory."/fastqc_reports");
+
 #-----------------------------------------------------------------------------
 #-cleanup -------------------------------------------
 #-----------------------------------------------------------------------------
