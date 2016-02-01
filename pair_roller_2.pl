@@ -109,7 +109,11 @@ $r_buffer_size = $r_buffer_size + 1;
 #-main loop-------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
-while (1)
+my $main_loop_true = 1;
+my $reached_eof=0;
+
+
+while ($main_loop_true == 1)
 {
 
 my $l_position = 1; my $r_position =1;
@@ -158,7 +162,6 @@ for(my $i = 1; $i < $l_buffer_size ; $i++)
 
 if ($match == 1)
 {
-#printf $l_position."\:".$r_position."\n";
 while ($l_position > 1)
       {
 
@@ -306,21 +309,30 @@ for(my $k = 1; $k < $fillerup ; $k++)
 #-----------------------------------------------------------------------------
 #-----------------------------------------------------------------------------
 
+if (eof ($FILEA))
+    {
+    printf(".");
+    $reached_eof = $reached_eof + 1;
+    if ($reached_eof >= $fillerup)
+        {
+        printf "\nNumber of reads matched: ". $match_count;
+        printf "\nNumber of reads mismatched: ". $mismatch_count;
+        printf "\nNumber of reads too short: ".$short_count."\n";
+        $main_loop_true = -1;
+        }
+    }
+if (eof ($FILEB))
+    {
+    $reached_eof = $reached_eof + 1;
+    if ($reached_eof >= $fillerup)
+        {
+        printf "\nNumber of reads matched: ". $match_count;
+        printf "\nNumber of reads mismatched: ". $mismatch_count;
+        printf "\nNumber of reads too short: ".$short_count."\n";
+        $main_loop_true = -1;
+        }
+    }
 
-if ($l_buffer_size <= 1) 
-{
-printf "\nNumber of reads matched: ". $match_count;
-printf "\nNumber of reads mismatched: ". $mismatch_count;
-printf "\nNumber of reads too short: ".$short_count."\n";
-exit;
-}
-if ($r_buffer_size <= 1) 
-{
-printf "\nNumber of reads matched: ". $match_count;
-printf "\nNumber of reads mismatched: ". $mismatch_count;
-printf "\nNumber of reads too short: ".$short_count."\n";
-exit;
-}
 }
 
 
